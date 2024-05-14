@@ -2,14 +2,30 @@ import React from 'react';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { MD3LightTheme as DefaultTheme, PaperProvider } from 'react-native-paper';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+
+import { GlobalContextProvider } from '@/contexts/global';
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+const theme = {
+  ...DefaultTheme,
+  roundness: 10,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#FFCC2E',
+    secondary: '#1E1E2D',
+    background: "#111111",
+    outline: "#292929",
+    surfaceDisabled: "#765900",
+    onSurface: "#fff",
+    surface: "#000"
+  },
+};
 
 export default function RootLayout() {
 
@@ -40,10 +56,15 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ animation: "slide_from_right" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <GlobalContextProvider>
+      <PaperProvider theme={theme}>
+        <Stack screenOptions={{ animation: "slide_from_right", headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </PaperProvider>
+    </GlobalContextProvider>
   );
 }
