@@ -1,18 +1,38 @@
+import { AddQuestionForm } from "@/components/form/create-quiz/add-question-form";
 import PageLayout from "@/components/layouts/page-layout";
 import { quizService } from "@/firebase/services/quiz";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import NSQuiz from "@/firebase/services/quiz/type";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
 import {
   Button,
   Checkbox,
+  Divider,
   HelperText,
   Text,
   TextInput,
+  TouchableRipple,
 } from "react-native-paper";
 import * as z from "zod";
 
 ///----------------------------------------------------------------------------------------------------------
+
+export interface ICrateQuizeFormState {
+  name: string;
+  description: string;
+  pointsPerQuestion: string;
+  timeLimit: string;
+  hasNegativeMarking: boolean;
+  pointsDeductedPerWrongAnswer?: string;
+  questions: NSQuiz.IQuestion[];
+}
+const defaultQuestionValue = {
+  question: "",
+  options: ["Option1", "Option2"],
+  correctAnswer: 0,
+};
+
 const defaultValue = {
   name: "",
   description: "",
@@ -20,6 +40,13 @@ const defaultValue = {
   timeLimit: "",
   hasNegativeMarking: false,
   pointsDeductedPerWrongAnswer: "",
+  questions: [
+    {
+      question: "Enter your question here",
+      options: ["Option1", "Option2"],
+      correctAnswer: 0,
+    },
+  ],
 };
 
 const formSchema = z.object({
@@ -28,12 +55,16 @@ const formSchema = z.object({
   pointsPerQuestion: z.number().int().positive(),
   timeLimit: z.number().int().positive(),
   hasNegativeMarking: z.boolean(),
+  // should be less than the points to be awarded
   pointsDeductedPerWrongAnswer: z.number().positive().optional(),
 });
+
 ///----------------------------------------------------------------------------------------------------------
 
 const CreateQuiz = () => {
-  const [form, setForm] = useState(defaultValue);
+  const { id } = useLocalSearchParams();
+
+  const [form, setForm] = useState<ICrateQuizeFormState>(defaultValue);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,10 +75,12 @@ const CreateQuiz = () => {
     const { success, error } = formSchema.safeParse({
       name: form.name.trim(),
       description: form.description.trim(),
-      pointsPerQuestion: form.pointsPerQuestion,
-      timeLimit: form.timeLimit,
+      pointsPerQuestion: +form.pointsPerQuestion,
+      timeLimit: +form.timeLimit,
       hasNegativeMarking: form.hasNegativeMarking,
-      pointsDeductedPerWrongAnswer: form.pointsDeductedPerWrongAnswer,
+      pointsDeductedPerWrongAnswer: form.pointsDeductedPerWrongAnswer
+        ? +form.pointsDeductedPerWrongAnswer
+        : null,
     });
 
     if (!success) {
@@ -71,9 +104,26 @@ const CreateQuiz = () => {
           typeof error.formErrors.fieldErrors.timeLimit === "string"
             ? error.formErrors.fieldErrors.timeLimit
             : error.formErrors.fieldErrors.timeLimit.join(", ");
-      if (form.hasNegativeMarking && !form.pointsDeductedPerWrongAnswer)
-        err.pointsDeductedPerWrongAnswer = "This field should be non zero.";
     }
+
+    if (form.hasNegativeMarking && !form.pointsDeductedPerWrongAnswer)
+      err.pointsDeductedPerWrongAnswer = "This field should be non zero.";
+    if (
+      form.hasNegativeMarking &&
+      form.pointsDeductedPerWrongAnswer &&
+      +form.pointsDeductedPerWrongAnswer > +form.pointsPerQuestion
+    ) {
+      err.pointsDeductedPerWrongAnswer =
+        "This field should be less than points per question.";
+    }
+    form.questions.forEach((q, idx) => {
+      if (q.question.trim().length === 0)
+        err[`questions[${idx}].question`] = "This field is required.";
+      q.options.forEach((o, oIdx) => {
+        if (o.trim().length === 0)
+          err[`questions[${idx}].options[${oIdx}]`] = "This field is required.";
+      });
+    });
 
     setErrors(err);
 
@@ -83,27 +133,74 @@ const CreateQuiz = () => {
   const onSubmit = async () => {
     if (!onValidate()) return;
     setLoading(true);
-    const { error } = await quizService.createQuiz({
-      ...form,
+    const payload: NSQuiz.ICreateQuiz = {
+      name: form.name,
+      description: form.description,
+      hasNegativeMarking: form.hasNegativeMarking,
       pointsPerQuestion: +form.pointsPerQuestion,
       timeLimit: +form.timeLimit,
-      pointsDeductedPerWrongAnswer: +form.pointsDeductedPerWrongAnswer,
-    });
+      questions: form.questions,
+    };
+    if (form.hasNegativeMarking && form.pointsDeductedPerWrongAnswer) {
+      payload.pointsDeductedPerWrongAnswer = +form.pointsDeductedPerWrongAnswer;
+    }
+    let error: any = null;
+    let idToBeRoutedOnSuccess = id;
+    if (id) {
+      const res = await quizService.updateQuiz(id as string, payload);
+      error = res.error;
+    } else {
+      const res = await quizService.createQuiz(payload);
+      error = res.error;
+      idToBeRoutedOnSuccess = res.data;
+    }
+    setLoading(false);
+
     if (error) {
       Alert.alert("Something went wrong!", error.message);
     } else {
-      Alert.alert("Quiz created successfully!");
-      setForm(defaultValue);
-      router.push("/quiz-list");
+      Alert.alert(`Quiz ${id ? "updated" : "created"} successfully!`);
+      onReset();
+      router.push(`/create-quiz?id=${idToBeRoutedOnSuccess}`);
     }
-    setLoading(false);
   };
+
+  const onReset = () => {
+    setErrors({});
+    setForm(defaultValue);
+    router.setParams({ id: "" });
+  };
+
+  useEffect(() => {
+    if (id)
+      quizService.getQuizById(id as string).then(({ data }) => {
+        if (data) {
+          setForm({
+            name: data.name,
+            description: data.description,
+            pointsPerQuestion: data.pointsPerQuestion.toString(),
+            timeLimit: data.timeLimit.toString(),
+            hasNegativeMarking: data.hasNegativeMarking,
+            pointsDeductedPerWrongAnswer:
+              data.pointsDeductedPerWrongAnswer?.toString(),
+            questions: data.questions,
+          });
+        }
+      });
+  }, [id]);
 
   return (
     <PageLayout>
       <ScrollView>
         <View className="w-full min-h-[70vh] px-4 my-6 space-y-4">
-          <Text variant="titleLarge">Create quiz</Text>
+          <View className="flex flex-row justify-between items-center">
+            <Text variant="titleLarge">{id ? "Update" : "Create"} quiz</Text>
+            <TouchableRipple onPress={onReset} rippleColor="white">
+              <Text variant="bodySmall" className="underline text-primary">
+                Reset Form
+              </Text>
+            </TouchableRipple>
+          </View>
           <View className="space-y-4">
             <View>
               <TextInput
@@ -211,15 +308,58 @@ const CreateQuiz = () => {
               </View>
             )}
 
+            <Divider />
+
+            <View>
+              <Text variant="titleLarge">Add questions</Text>
+              <AddQuestionForm
+                questions={form.questions}
+                setForm={setForm}
+                addNewQuestion={() => {
+                  setForm((prev) => ({
+                    ...prev,
+                    questions: [...prev.questions, defaultQuestionValue],
+                  }));
+                }}
+                removeQuestion={(index: number) => {
+                  if (form.questions.length === 1)
+                    return Alert.alert("You can't remove all questions.");
+
+                  setForm((prev) => {
+                    const newQuestions = [...prev.questions];
+                    newQuestions.splice(index, 1);
+                    return { ...prev, questions: newQuestions };
+                  });
+                }}
+                addOption={(qIdx: number) => {
+                  if (form.questions[qIdx].options.length === 4)
+                    return Alert.alert("You can't add more than 4 options.");
+
+                  setForm((prev) => {
+                    const newQuestions = [...prev.questions];
+                    newQuestions[qIdx].options.push("");
+                    return { ...prev, questions: newQuestions };
+                  });
+                }}
+                removeOption={(qIdx: number, oIdx: number) => {
+                  setForm((prev) => {
+                    const newQuestions = [...prev.questions];
+                    newQuestions[qIdx].options.splice(oIdx, 1);
+                    return { ...prev, questions: newQuestions };
+                  });
+                }}
+                errors={errors}
+              />
+            </View>
             <Button
-              icon="plus"
+              icon={id ? "check-circle-outline" : "plus"}
               mode="contained"
               rippleColor="white"
               onPress={onSubmit}
               loading={loading}
               disabled={loading}
             >
-              Create quiz
+              {id ? "Update quiz" : "Create quiz"}
             </Button>
           </View>
         </View>

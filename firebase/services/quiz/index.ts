@@ -1,5 +1,13 @@
 import { auth, db } from "@/firebase";
-import { addDoc, collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import NSQuiz from "./type";
 
 export const quizService = {
@@ -14,7 +22,34 @@ export const quizService = {
         ...data,
         author: currentUser.uid,
       });
-      return { data: newDoc };
+      return { data: newDoc.id };
+    } catch (error: any) {
+      console.log(error);
+      return { error };
+    }
+  },
+  updateQuiz: async (id: string, data: NSQuiz.ICreateQuiz) => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return { error: "User not found" };
+      }
+      const docRef = doc(db, "quizzes", id);
+      await setDoc(docRef, { ...data, author: currentUser.uid });
+      return { error: false };
+    } catch (error: any) {
+      console.log(error);
+      return { error };
+    }
+  },
+  getQuizById: async (id: string) => {
+    try {
+      const docRef = doc(db, "quizzes", id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        return { error: "Quiz not found" };
+      }
+      return { data: docSnap.data() as NSQuiz.IQuiz };
     } catch (error: any) {
       console.log(error);
       return { error };
@@ -41,5 +76,5 @@ export const quizService = {
       console.log(error);
       return { error };
     }
-  }
+  },
 };

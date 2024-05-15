@@ -8,6 +8,13 @@ namespace NSQuiz {
     hasNegativeMarking: boolean;
     pointsDeductedPerWrongAnswer?: number;
     author: string;
+    questions: IQuestion[];
+  }
+
+  export interface IQuestion {
+    question: string;
+    options: string[];
+    correctAnswer: number;
   }
 
   // payload for creating a quiz
@@ -18,6 +25,7 @@ namespace NSQuiz {
     pointsPerQuestion: number;
     hasNegativeMarking: boolean;
     pointsDeductedPerWrongAnswer?: number;
+    questions: IQuestion[];
   }
 }
 

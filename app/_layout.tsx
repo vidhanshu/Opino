@@ -64,6 +64,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(quiz)" />
           <Stack.Screen name="+not-found" />
         </Stack>
       </PaperProvider>

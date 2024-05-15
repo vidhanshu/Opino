@@ -10,6 +10,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase";
 import { PasswordField } from "@/components/form/password-field";
 import { useGlobalContext } from "@/contexts/global";
+import { userServices } from "@/firebase/services/user";
 
 ///----------------------------------------------------------------------------------------------------------
 const formSchema = z.object({
@@ -53,7 +54,17 @@ const SignUp = () => {
     if (!onValidate()) return;
     try {
       setLoading(true);
-      await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password.trim()
+      );
+      await userServices.createUser({
+        id: user.uid,
+        email: user.email!,
+        name: user.providerData[0].displayName || "",
+        photoURL: user.providerData[0].photoURL || "",
+      });
       router.push("/home");
     } catch (error: any) {
       console.log(error);

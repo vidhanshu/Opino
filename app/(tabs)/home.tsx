@@ -1,11 +1,12 @@
 import GenericDialog from "@/components/dialog/generic-dialog";
 import PageLayout from "@/components/layouts/page-layout";
+import { QuizList } from "@/components/list/quiz-list";
 import { images } from "@/constants";
 import { auth } from "@/firebase";
 import { router } from "expo-router";
 import { signOut } from "firebase/auth";
 import React, { useState } from "react";
-import { Image, ScrollView, View } from "react-native";
+import { Image, View } from "react-native";
 import { Button, IconButton, Text } from "react-native-paper";
 
 export default function HomeScreen() {
@@ -23,39 +24,33 @@ export default function HomeScreen() {
 
   return (
     <PageLayout>
-      <ScrollView>
-        <View className="bg-black h-[60px] border-b border-secondary-200 flex-row gap-x-4 justify-between items-center pr-2">
-          <Image
-            className="h-6 -translate-x-8"
-            source={images.logo}
-            resizeMode="contain"
+      <View className="bg-black h-[60px] border-b border-secondary-200 flex-row gap-x-4 justify-between items-center pr-2">
+        <Image
+          className="h-6 -translate-x-8"
+          source={images.logo}
+          resizeMode="contain"
+        />
+        <View className="flex-row items-center">
+          <IconButton
+            mode="contained"
+            className="bg-secondary-200"
+            icon="magnify"
+            size={20}
+            onPress={() => router.push("/quiz-list")}
           />
-          <View className="flex-row items-center">
-            <IconButton
-              mode="contained"
-              className="bg-secondary-200"
-              icon="magnify"
-              size={20}
-              onPress={() => router.push("/quiz-list")}
-            />
-            <IconButton
-              icon="login"
-              size={20}
-              mode="contained"
-              className="bg-secondary-200"
-              onPress={() => setSignOutDialog({ ...signOutDialog, show: true })}
-            />
-          </View>
+          <IconButton
+            icon="login"
+            size={20}
+            mode="contained"
+            className="bg-secondary-200"
+            onPress={() => setSignOutDialog({ ...signOutDialog, show: true })}
+          />
         </View>
-        <View className="w-full min-h-[70vh] px-4 my-6 space-y-4">
-          <View>
-            <Text className="font-rbold text-center" variant="headlineMedium">
-              Welcome! to Opnio{" "}
-            </Text>
-            <Button>Get started!</Button>
-          </View>
-        </View>
-      </ScrollView>
+      </View>
+      <View className="min-h-[70vh]  py-8">
+        <Text className="ml-4 mb-8">Explore quizes</Text>
+        <QuizList allowSearch={false} />
+      </View>
       <GenericDialog
         title="Are you sure?"
         subtitle="You'll be logged out of an application once signeout!"
