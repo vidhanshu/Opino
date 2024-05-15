@@ -16,10 +16,10 @@ import * as z from "zod";
 const defaultValue = {
   name: "",
   description: "",
-  pointsPerQuestion: 0,
-  timeLimit: 0,
+  pointsPerQuestion: "",
+  timeLimit: "",
   hasNegativeMarking: false,
-  pointsDeductedPerWrongAnswer: 0,
+  pointsDeductedPerWrongAnswer: "",
 };
 
 const formSchema = z.object({
@@ -83,7 +83,12 @@ const CreateQuiz = () => {
   const onSubmit = async () => {
     if (!onValidate()) return;
     setLoading(true);
-    const { data, error } = await quizService.createQuiz(form);
+    const { error } = await quizService.createQuiz({
+      ...form,
+      pointsPerQuestion: +form.pointsPerQuestion,
+      timeLimit: +form.timeLimit,
+      pointsDeductedPerWrongAnswer: +form.pointsDeductedPerWrongAnswer,
+    });
     if (error) {
       Alert.alert("Something went wrong!", error.message);
     } else {
@@ -128,7 +133,9 @@ const CreateQuiz = () => {
                 onChangeText={(text) =>
                   setForm((prev) => ({ ...prev, description: text }))
                 }
-                right={<TextInput.Affix text={`${form.description.length}/500`} />}
+                right={
+                  <TextInput.Affix text={`${form.description.length}/500`} />
+                }
               />
               <HelperText type="error" visible={!!errors.description}>
                 {errors.description}
@@ -139,11 +146,11 @@ const CreateQuiz = () => {
                 disabled={loading}
                 mode="outlined"
                 label="Quiz time limit (in minutes)"
-                value={form.timeLimit.toString()}
+                value={form.timeLimit}
                 placeholder="Enter quiz time limit in minutes"
                 inputMode="numeric"
                 onChangeText={(text) =>
-                  setForm((prev) => ({ ...prev, timeLimit: Number(text) }))
+                  setForm((prev) => ({ ...prev, timeLimit: text }))
                 }
               />
               <HelperText type="error" visible={!!errors.timeLimit}>
@@ -155,13 +162,13 @@ const CreateQuiz = () => {
                 disabled={loading}
                 mode="outlined"
                 label="Point(s) per question"
-                value={form.pointsPerQuestion.toString()}
+                value={form.pointsPerQuestion}
                 placeholder="Enter point(s) per question"
                 inputMode="numeric"
                 onChangeText={(text) =>
                   setForm((prev) => ({
                     ...prev,
-                    pointsPerQuestion: Number(text),
+                    pointsPerQuestion: text,
                   }))
                 }
               />
@@ -185,13 +192,13 @@ const CreateQuiz = () => {
                   disabled={loading}
                   mode="outlined"
                   label="Point(s) deducted per wrong answer"
-                  value={form.pointsDeductedPerWrongAnswer.toString()}
+                  value={form.pointsDeductedPerWrongAnswer}
                   placeholder="Point(s) deducted per wrong answer"
                   inputMode="numeric"
                   onChangeText={(text) =>
                     setForm((prev) => ({
                       ...prev,
-                      pointsDeductedPerWrongAnswer: Number(text),
+                      pointsDeductedPerWrongAnswer: text,
                     }))
                   }
                 />

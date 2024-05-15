@@ -1,5 +1,5 @@
 import { auth, db } from "@/firebase";
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import NSQuiz from "./type";
 
 export const quizService = {
@@ -33,4 +33,13 @@ export const quizService = {
       return { error };
     }
   },
+  deleteQuiz: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "quizzes", id));
+      return { data: "Quiz deleted successfully" };
+    } catch (error: any) {
+      console.log(error);
+      return { error };
+    }
+  }
 };

@@ -101,7 +101,7 @@ const SignIn = () => {
               disabled={loading}
               rippleColor="white"
               className="rounded-md"
-              icon="account-plus"
+              icon="login"
               mode="contained"
               onPress={signInUser}
             >
