@@ -18,18 +18,30 @@ import * as z from "zod";
 
 ///----------------------------------------------------------------------------------------------------------
 
-export interface ICrateQuizeFormState {
+export interface IQuestion {
+  id: number;
+  question: string;
+  options: {
+    id: number;
+    option: string;
+  }[];
+  correctAnswer: number;
+}
+export interface ICrateQuizFormState {
   name: string;
   description: string;
   pointsPerQuestion: string;
   timeLimit: string;
   hasNegativeMarking: boolean;
   pointsDeductedPerWrongAnswer?: string;
-  questions: NSQuiz.IQuestion[];
+  questions: IQuestion[];
 }
 const defaultQuestionValue = {
   question: "",
-  options: ["Option1", "Option2"],
+  options: [
+    { id: 1, option: "Option1" },
+    { id: 2, option: "Option2" },
+  ],
   correctAnswer: 0,
 };
 
@@ -42,8 +54,12 @@ const defaultValue = {
   pointsDeductedPerWrongAnswer: "",
   questions: [
     {
+      id: 1, // unique index for frontend use only will remove before sending to backend
       question: "Enter your question here",
-      options: ["Option1", "Option2"],
+      options: [
+        { id: 1, option: "Option1" },
+        { id: 2, option: "Option2" },
+      ],
       correctAnswer: 0,
     },
   ],
@@ -51,7 +67,7 @@ const defaultValue = {
 
 const formSchema = z.object({
   name: z.string().min(3).max(50),
-  description: z.string().min(10).max(500),
+  description: z.string().max(500).optional(),
   pointsPerQuestion: z.number().int().positive(),
   timeLimit: z.number().int().positive(),
   hasNegativeMarking: z.boolean(),
@@ -64,7 +80,7 @@ const formSchema = z.object({
 const CreateQuiz = () => {
   const { id } = useLocalSearchParams();
 
-  const [form, setForm] = useState<ICrateQuizeFormState>(defaultValue);
+  const [form, setForm] = useState<ICrateQuizFormState>(defaultValue);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -120,7 +136,7 @@ const CreateQuiz = () => {
       if (q.question.trim().length === 0)
         err[`questions[${idx}].question`] = "This field is required.";
       q.options.forEach((o, oIdx) => {
-        if (o.trim().length === 0)
+        if (o.option.trim().length === 0)
           err[`questions[${idx}].options[${oIdx}]`] = "This field is required.";
       });
     });
@@ -139,7 +155,11 @@ const CreateQuiz = () => {
       hasNegativeMarking: form.hasNegativeMarking,
       pointsPerQuestion: +form.pointsPerQuestion,
       timeLimit: +form.timeLimit,
-      questions: form.questions,
+      questions: form.questions.map((q) => ({
+        question: q.question,
+        options: q.options.map((o) => o.option),
+        correctAnswer: q.correctAnswer,
+      })),
     };
     if (form.hasNegativeMarking && form.pointsDeductedPerWrongAnswer) {
       payload.pointsDeductedPerWrongAnswer = +form.pointsDeductedPerWrongAnswer;
@@ -183,7 +203,12 @@ const CreateQuiz = () => {
             hasNegativeMarking: data.hasNegativeMarking,
             pointsDeductedPerWrongAnswer:
               data.pointsDeductedPerWrongAnswer?.toString(),
-            questions: data.questions,
+            questions: data.questions.map((q) => ({
+              id: Math.random(),
+              question: q.question,
+              options: q.options.map((o, idx) => ({ id: idx, option: o })),
+              correctAnswer: q.correctAnswer,
+            })),
           });
         }
       });
@@ -318,7 +343,17 @@ const CreateQuiz = () => {
                 addNewQuestion={() => {
                   setForm((prev) => ({
                     ...prev,
-                    questions: [...prev.questions, defaultQuestionValue],
+                    questions: [
+                      ...prev.questions,
+                      {
+                        ...defaultQuestionValue,
+                        id: Math.random(),
+                        options: defaultQuestionValue.options.map((a) => ({
+                          ...a,
+                          id: Math.random(),
+                        })),
+                      },
+                    ],
                   }));
                 }}
                 removeQuestion={(index: number) => {
@@ -337,7 +372,10 @@ const CreateQuiz = () => {
 
                   setForm((prev) => {
                     const newQuestions = [...prev.questions];
-                    newQuestions[qIdx].options.push("");
+                    newQuestions[qIdx].options.push({
+                      id: Math.random(),
+                      option: `Option${newQuestions[qIdx].options.length + 1}`,
+                    });
                     return { ...prev, questions: newQuestions };
                   });
                 }}

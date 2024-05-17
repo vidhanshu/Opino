@@ -3,7 +3,7 @@ import PageLayout from "@/components/layouts/page-layout";
 import { QuizList } from "@/components/list/quiz-list";
 import { images } from "@/constants";
 import { auth } from "@/firebase";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { Image, View } from "react-native";
@@ -49,7 +49,12 @@ export default function HomeScreen() {
       </View>
       <View className="min-h-[70vh]  py-8">
         <Text className="ml-4 mb-8">Explore quizes</Text>
-        <QuizList allowSearch={false} />
+        <QuizList limit={2} allowSearch={false} />
+        <View className="px-4 mt-4">
+          <Link href="/quiz-list" className="underline text-primary">
+            View more
+          </Link>
+        </View>
       </View>
       <GenericDialog
         title="Are you sure?"

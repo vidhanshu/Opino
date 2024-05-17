@@ -6,7 +6,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
+  where,
 } from "firebase/firestore";
 import NSQuiz from "./type";
 
@@ -72,6 +74,39 @@ export const quizService = {
     try {
       await deleteDoc(doc(db, "quizzes", id));
       return { data: "Quiz deleted successfully" };
+    } catch (error: any) {
+      console.log(error);
+      return { error };
+    }
+  },
+  saveResponse: async (response: Omit<NSQuiz.IQuizResponse, "id">) => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return { error: "User not found" };
+      }
+      const newDoc = await addDoc(collection(db, "responses"), {
+        ...response,
+        attemptedOn: new Date().toISOString(),
+      });
+      return { data: newDoc.id };
+    } catch (error) {
+      return { error };
+    }
+  },
+  getResponse: async (quizId: string, userId: string) => {
+    try {
+      const q = query(
+        collection(db, "responses"),
+        where("quizId", "==", quizId),
+        where("userId", "==", userId)
+      );
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      return { data: data[0] as NSQuiz.IQuizResponse };
     } catch (error: any) {
       console.log(error);
       return { error };

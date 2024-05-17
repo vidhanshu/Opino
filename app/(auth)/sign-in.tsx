@@ -9,6 +9,7 @@ import { images } from "@/constants";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase";
 import { PasswordField } from "@/components/form/password-field";
+import { clearHistoryAndRoute } from "@/helpers/route";
 
 ///----------------------------------------------------------------------------------------------------------
 const formSchema = z.object({
@@ -53,7 +54,7 @@ const SignIn = () => {
     try {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
-      router.push("/home");
+      clearHistoryAndRoute(router, `/home`)
     } catch (error: any) {
       Alert.alert("Something went wrong!", error.message);
     } finally {

@@ -22,7 +22,13 @@ const defaultDeleteConfirmation = {
 };
 ///----------------------------------------------------------------------------------------------------------
 
-export const QuizList = ({ allowSearch = true }: { allowSearch?: boolean }) => {
+export const QuizList = ({
+  allowSearch = true,
+  limit,
+}: {
+  allowSearch?: boolean;
+  limit?: number;
+}) => {
   const { user } = useGlobalContext();
   const [q, setQ] = useState("");
 
@@ -54,6 +60,7 @@ export const QuizList = ({ allowSearch = true }: { allowSearch?: boolean }) => {
     if (!deleteConfirmation.id) return;
 
     setDeleteConfirmation((prev) => ({ ...prev, loading: true }));
+    setDeleteConfirmation((prev) => ({ ...prev, show: false }));
     const { error } = await quizService.deleteQuiz(deleteConfirmation.id);
     if (error) {
       Alert.alert("Something went wrong!", error.message);
@@ -72,6 +79,8 @@ export const QuizList = ({ allowSearch = true }: { allowSearch?: boolean }) => {
             ? []
             : q?.length && allowSearch
             ? ql.filter(({ name }) => name.includes(q))
+            : limit
+            ? ql.slice(0, limit)
             : ql
         }
         keyExtractor={(item) => item.id}

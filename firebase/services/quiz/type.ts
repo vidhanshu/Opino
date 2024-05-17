@@ -12,9 +12,19 @@ namespace NSQuiz {
   }
 
   export interface IQuestion {
+    id?: string | number;
     question: string;
     options: string[];
     correctAnswer: number;
+  }
+
+  export interface IQuizResponse {
+    id: string;
+    quizId: string;
+    userId: string;
+    answers: number[];
+    score: number;
+    totalScore: number;
   }
 
   // payload for creating a quiz

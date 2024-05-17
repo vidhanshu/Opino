@@ -1,7 +1,7 @@
 import PageLayout from "@/components/layouts/page-layout";
-import { Feather } from "@expo/vector-icons";
 import { images } from "@/constants";
 import { useGlobalContext } from "@/contexts/global";
+import { Feather } from "@expo/vector-icons";
 import { Link, Redirect } from "expo-router";
 import React from "react";
 import { Image, View } from "react-native";
@@ -14,7 +14,7 @@ export default function HomeScreen() {
 
   return (
     <PageLayout>
-      <View className="flex flex-1 justify-center items-center gap-4">
+      <View className="flex flex-1 justify-center items-center gap-4 px-2">
         {!loading ? (
           <>
             <Image source={images.logo} className="h-32" resizeMode="contain" />

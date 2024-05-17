@@ -9,14 +9,16 @@ import { images } from "@/constants";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase";
 import { PasswordField } from "@/components/form/password-field";
-import { useGlobalContext } from "@/contexts/global";
 import { userServices } from "@/firebase/services/user";
+import { clearHistoryAndRoute } from "@/helpers/route";
 
 ///----------------------------------------------------------------------------------------------------------
+
 const formSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).max(30),
 });
+
 ///----------------------------------------------------------------------------------------------------------
 
 const SignUp = () => {
@@ -65,7 +67,7 @@ const SignUp = () => {
         name: user.providerData[0].displayName || "",
         photoURL: user.providerData[0].photoURL || "",
       });
-      router.push("/home");
+      clearHistoryAndRoute(router, `/home`)
     } catch (error: any) {
       console.log(error);
       Alert.alert("Something went wrong!", error.message);
